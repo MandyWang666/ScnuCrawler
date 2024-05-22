@@ -24,7 +24,7 @@ def read_csv(data_path):
         row = next(reader)
         target_row_number = 50
         while reader.line_num < target_row_number:
-            for title,link in row.items():
+            for title, link in row.items():
                 print(link)
                 open_url(link)
             row = next(reader)
@@ -48,11 +48,10 @@ def start_crawl():
     time.sleep(1)
     driver.find_element('id', 'su').click()
     time.sleep(1)
-
+    """
     html_source = driver.page_source
     # print(html_source)
     link_list = []
-    target_char = "http"
 
     soup = BeautifulSoup(html_source, 'html.parser')
     for link in soup.find_all('a'):
@@ -63,7 +62,27 @@ def start_crawl():
             link_list.append(single_link)
 
     df = pd.DataFrame(data=link_list, columns=['link_list'])
-    df.to_csv('data/result2.csv', index=False)
+    df.to_csv('data/result3.csv', index=False)
+"""
+    target_char = "http"
+    while driver.find_element('id', 'page').is_displayed():
+        try:
+            driver.find_element('id', 'page').click()
+            time.sleep(8)
+            link_list = []
+            html_source = driver.page_source
+            soup = BeautifulSoup(html_source, 'html.parser')
+            for link in soup.find_all('a'):
+                single_link = str(link.get('href'))
+                sub_string = single_link[0:4]
+                # 特殊情况：http://map.baidu.com访问会有问题
+                if sub_string == target_char and single_link != 'http://map.baidu.com':
+                    link_list.append(single_link)
+
+            df = pd.DataFrame(data=link_list, columns=['link_list'])
+            df.to_csv("data/result3.csv", mode="a", index=False, encoding="utf-8")
+        except:
+            driver.quit()
 
 
 #  pd.read_html(html_source)
@@ -78,6 +97,4 @@ def start_crawl():
 
 if __name__ == '__main__':
     start_crawl()
-    read_csv('data/result2.csv')
-
-
+    # read_csv('data/result3.csv')
