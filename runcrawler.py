@@ -1,21 +1,30 @@
 from selenium import webdriver
-from selenium.webdriver.support import expected_conditions as EC
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.common.by import By
 import time
 import pandas as pd
 from bs4 import BeautifulSoup
-import html
-import threading
 import requests
 import csv
+from pprint import pprint
+from paddlenlp import Taskflow
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.common.by import By
+import html
+import threading
+
+
+def text_analysis(url_text):
+    schema = ['姓名', '毕业院校']  # Define the schema for entity extraction
+    ie = Taskflow('information_extraction', schema=schema)
+    pprint(ie(url_text))
 
 
 def open_url(url_path):
     r = requests.get(url_path)
     soup = BeautifulSoup(r.text, 'html.parser')
     text = soup.get_text()
-    print(text)
+    text_analysis(text)
+    # print(text)
 
 
 def read_csv(data_path):
@@ -46,55 +55,43 @@ def start_crawl():
     time.sleep(1)
     driver.find_element('xpath', "//*[@id='container']/div[2]/div/div[2]/div/button").click()
     time.sleep(1)
-    driver.find_element('id', 'su').click()
-    time.sleep(1)
-    """
-    html_source = driver.page_source
-    # print(html_source)
-    link_list = []
 
-    soup = BeautifulSoup(html_source, 'html.parser')
-    for link in soup.find_all('a'):
-        single_link = str(link.get('href'))
-        sub_string = single_link[0:4]
-        # 特殊情况：http://map.baidu.com访问会有问题
-        if sub_string == target_char and single_link != 'http://map.baidu.com':
-            link_list.append(single_link)
-
-    df = pd.DataFrame(data=link_list, columns=['link_list'])
-    df.to_csv('data/result3.csv', index=False)
-"""
     target_char = "http"
+    current_page = 1
     while driver.find_element('id', 'page').is_displayed():
         try:
-            driver.find_element('id', 'page').click()
-            time.sleep(8)
+            time.sleep(2)
             link_list = []
             html_source = driver.page_source
             soup = BeautifulSoup(html_source, 'html.parser')
-            for link in soup.find_all('a'):
-                single_link = str(link.get('href'))
-                sub_string = single_link[0:4]
-                # 特殊情况：http://map.baidu.com访问会有问题
-                if sub_string == target_char and single_link != 'http://map.baidu.com':
-                    link_list.append(single_link)
+
+            for i in range(current_page, current_page + 10):
+                print(i)
+                tags = soup.find_all(id=str(i))
+                for tag in tags:
+                    tag_url = tag.a
+                    print(tag_url.get('href'))
+                    single_link = str(tag_url.get('href'))
+                    sub_string = single_link[0:4]
+                    # 特殊情况：http://map.baidu.com访问会有问题
+                    if sub_string == target_char and single_link != 'http://map.baidu.com':
+                        link_list.append(single_link)
+                current_page = current_page + 1
 
             df = pd.DataFrame(data=link_list, columns=['link_list'])
-            df.to_csv("data/result3.csv", mode="a", index=False, encoding="utf-8")
+            df.to_csv("data/result2.csv", mode="a", index=False, encoding="utf-8", header=0)
+
+            time.sleep(2)
+
+            if current_page == 11:
+                driver.find_element('xpath', "//*[@id='page']/div/a[10]").click()
+            else:
+                driver.find_element('xpath', "//*[@id='page']/div/a[11]").click()
+
         except:
             driver.quit()
 
 
-#  pd.read_html(html_source)
-
-# browser = mechanicalsoup.StatefulBrowser()
-# browser.open("https://www.baidu.com/s?ie=utf-8&f=8&rsv_bp=1&rsv_idx=1&tn=baidu&wd=%E5%8D%8E%E5%8D%97%E5%B8%88%E8%8C%83%E5%A4%A7%E5%AD%A6&fenlei=256&rsv_pq=0x85c5b4d30051bdbb&rsv_t=72db3CJFOaAHVithUr8dDTdZBl%2Bd88%2FtmzGgRy7R47pqtisswgAvOHrqO2W4&rqlang=en&rsv_enter=0&rsv_dl=tb&rsv_sug3=6&rsv_btype=i&inputT=86&rsv_sug4=86")
-# browser.list_links()
-# print(browser.url)
-# print(browser.page)
-# browser.close()
-
-
 if __name__ == '__main__':
-    start_crawl()
-    # read_csv('data/result3.csv')
+    # start_crawl()
+    read_csv('data/result2.csv')
