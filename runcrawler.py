@@ -24,7 +24,7 @@ def extract_context(text, keyword, context_size=200):
 
 
 def text_analysis(url_text):
-    schema = ['姓名', '毕业院校', '出生年份', '毕业年份']  # Define the schema for entity extraction
+    schema = ['姓名', '性别', '现任职务','工作单位', '毕业院校', '出生年份', '毕业年份']  # Define the schema for entity extraction
     ie = Taskflow('information_extraction', schema=schema)
     pprint(ie(url_text))
     result = ie(url_text)
@@ -32,23 +32,51 @@ def text_analysis(url_text):
 
     for item in result:
         name = item.get('姓名')  # 使用get方法来避免KeyError
+        sex = item.get('性别')
+        job_title = item.get('现任职务')
+        job_location = item.get('工作单位')
         school = item.get('毕业院校')
         birth_year = item.get('出生年份')
         graduate_year = item.get('毕业年份')
+
         if name is not None:  # 检查是否成功获取到'姓名'
             name_text = name[0]['text'] if name and isinstance(name, list) and name[0].get('text') else None
             if name_text is not None:
                 print(name_text)
         else:
-            name_text=""
+            name_text = ""
             print("当前字典中不存在'姓名'键")
+
+        if sex is not None:
+            sex_text = sex[0]['text'] if sex and isinstance(sex, list) and sex[0].get('text') else None
+            if sex_text is not None:
+                print(sex_text)
+        else:
+            sex_text = ""
+            print("当前字典中不存在'性别'键")
+
+        if job_title is not None:
+            job_title_text = job_title[0]['text'] if job_title and isinstance(job_title, list) and job_title[0].get('text') else None
+            if job_title_text is not None:
+                print(job_title_text)
+        else:
+            job_title_text = ""
+            print("当前字典中不存在'现任职务'键")
+
+        if job_location is not None:
+            job_location_text = job_location[0]['text'] if job_location and isinstance(job_location, list) and job_location[0].get('text') else None
+            if job_location_text is not None:
+                print(job_location_text)
+        else:
+            job_location_text = ""
+            print("当前字典中不存在'工作单位'键")
 
         if school is not None:
             school_text = school[0]['text'] if school and isinstance(school, list) and school[0].get('text') else None
             if school_text is not None:
                 print(school_text)
         else:
-            school_text=""
+            school_text = ""
             print("当前字典中不存在'毕业院校'键")
 
         if birth_year is not None:
@@ -57,7 +85,7 @@ def text_analysis(url_text):
             if birth_year_text is not None:
                 print(birth_year_text)
         else:
-            birth_year_text=""
+            birth_year_text = ""
             print("当前字典中不存在'出生年份'键")
 
         if graduate_year is not None:
@@ -66,12 +94,14 @@ def text_analysis(url_text):
             if graduate_year_text is not None:
                 print(graduate_year_text)
         else:
-            graduate_year_text=""
+            graduate_year_text = ""
             print("当前字典中不存在'毕业年份'键")
 
-        alumni_data = (name_text, school_text, birth_year_text, graduate_year_text)
+        alumni_data = (name_text, sex_text,job_title_text,job_location_text,school_text ,birth_year_text, graduate_year_text)
         alumni_list.append(alumni_data)
-    df1 = pd.DataFrame(data=alumni_list, columns=['姓名', '毕业院校', '出生年份', '毕业年份'])
+
+    df1 = pd.DataFrame(data=alumni_list, columns=['姓名', '性别', '现任职务','工作单位', '毕业院校', '出生年份', '毕业年份'])
+    df1.columns = ['姓名', '性别', '现任职务', '毕业院校', '工作单位','出生年份', '毕业年份']
     df1.to_csv("data/alumni.csv", mode="a", index=False, encoding="utf-8", header=0)
 
 
@@ -85,11 +115,11 @@ def open_url(url_path):
 
 
 def read_analysis_save(data_path):
-    time.sleep(2)
+    time.sleep(3)
     with open(data_path, 'r') as file:
         reader = csv.DictReader(file)
         row = next(reader)
-        target_row_number = 10
+        target_row_number = 200
         while reader.line_num < target_row_number:
             for title, link in row.items():
                 print(link)
@@ -116,8 +146,8 @@ def start_crawl():
 
     target_char = "http"
     current_page = 1
-    #while driver.find_element('id', 'page').is_displayed():
-    #demo展示前5页
+    # while driver.find_element('id', 'page').is_displayed():
+    # demo展示前5页
     for i in range(5):
         try:
             time.sleep(2)
@@ -126,11 +156,11 @@ def start_crawl():
             soup = BeautifulSoup(html_source, 'html.parser')
 
             for i in range(current_page, current_page + 10):
-                print(i)
+              #  print(i)
                 tags = soup.find_all(id=str(i))
                 for tag in tags:
                     tag_url = tag.a
-                    print(tag_url.get('href'))
+                  #  print(tag_url.get('href'))
                     single_link = str(tag_url.get('href'))
                     sub_string = single_link[0:4]
                     # 特殊情况：http://map.baidu.com访问会有问题
@@ -153,5 +183,5 @@ def start_crawl():
 
 
 if __name__ == '__main__':
-    start_crawl()
-    read_analysis_save('data/result.csv')
+   # start_crawl()
+    read_analysis_save('data/result2.csv')
